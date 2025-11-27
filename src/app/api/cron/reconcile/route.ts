@@ -9,7 +9,7 @@ import { checkWithdrawalStatus } from '@/services/withdrawalService';
  * GET /api/cron/reconcile
  * 
  * Cron job diário para reconciliação (plano Hobby Vercel)
- * Executa a cada 6 horas: 0 */6 * * *
+ * Executa 1x por dia às 03:00 UTC (00:00 BRT): 0 3 * * *
  * 
  * Verifica e reconcilia:
  * - Ordens pendentes

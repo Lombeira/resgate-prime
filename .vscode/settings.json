@@ -1,7 +1,12 @@
 {
   "prisma.showPrismaDataPlatformNotification": false,
   "prisma.prismaValidationHints": false,
+  "prisma.trace.server": "off",
   "[prisma]": {
-    "editor.defaultFormatter": "Prisma.prisma"
+    "editor.defaultFormatter": "Prisma.prisma",
+    "editor.formatOnSave": true
+  },
+  "files.associations": {
+    "*.prisma": "prisma"
   }
 }

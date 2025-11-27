@@ -165,9 +165,11 @@ UPSTASH_REDIS_REST_TOKEN=""
 
 O sistema foi otimizado para:
 - Processamento imediato de doações (sem esperar cron)
-- Reconciliação automática a cada 6 horas
+- Reconciliação automática 1x por dia (03:00 UTC)
 - Suporte a até **1000 doações/dia**
 - **Custo: R$ 0/mês**
+
+**Quer cron mais frequente?** Use GitHub Actions grátis! Veja `CRON_ALTERNATIVES.md`.
 
 Veja `VERCEL_HOBBY_PLAN.md` para detalhes completos.
 

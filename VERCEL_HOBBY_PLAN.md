@@ -39,7 +39,7 @@ async function handlePixReceived(data, webhookEventId) {
 }
 ```
 
-### 2. Cron de Reconciliação (a cada 6 horas)
+### 2. Cron de Reconciliação (1x por dia)
 
 **Configuração** (`vercel.json`):
 ```json
@@ -47,7 +47,7 @@ async function handlePixReceived(data, webhookEventId) {
   "crons": [
     {
       "path": "/api/cron/reconcile",
-      "schedule": "0 */6 * * *"
+      "schedule": "0 3 * * *"
     }
   ]
 }
@@ -59,11 +59,8 @@ async function handlePixReceived(data, webhookEventId) {
 - ✅ Reconcilia discrepâncias
 - ✅ Limpa webhooks antigos (> 30 dias)
 
-**Horários de execução**:
-- 00:00 UTC (21:00 BRT dia anterior)
-- 06:00 UTC (03:00 BRT)
-- 12:00 UTC (09:00 BRT)
-- 18:00 UTC (15:00 BRT)
+**Horário de execução**:
+- **03:00 UTC** (00:00 BRT) - Uma vez por dia à meia-noite (horário de Brasília)
 
 ### 3. Fallback para Redis (Opcional)
 
