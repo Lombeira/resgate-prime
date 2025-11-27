@@ -205,6 +205,19 @@ curl -X POST https://seu-app.vercel.app/api/pix/webhook \
   -d '{"id":"test","type":"pix.received","timestamp":"2025-01-01T00:00:00Z","data":{}}'
 ```
 
+## 🎯 Primeiro PIX de Teste
+
+Quer testar o sistema? Veja o guia completo: **[PRIMEIRO_PIX.md](./PRIMEIRO_PIX.md)**
+
+**Quick Start** (30 minutos):
+1. Configure Neon PostgreSQL
+2. Configure provedor (Mercado Bitcoin)
+3. Crie wallet USDT
+4. Preencha `.env.local`
+5. Execute `pnpm db:push`
+6. Faça PIX de R$ 10
+7. Veja USDT chegar na sua wallet! 🎉
+
 ## 📚 Uso
 
 ### Dashboard
