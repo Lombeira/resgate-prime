@@ -5,6 +5,7 @@ import { createLogger } from '@/lib/logger';
 import { verifyWebhookSignature, extractRealIP } from '@/lib/verifyWebhook';
 import { enqueueJob } from '@/lib/queue';
 import { createRateLimitMiddleware } from '@/lib/rateLimit';
+import { processDonation } from '@/workers/processDonation';
 
 /**
  * POST /api/pix/webhook
@@ -132,6 +133,24 @@ export async function POST(req: NextRequest) {
 }
 
 /**
+ * Processa doação em background (sem esperar)
+ */
+async function processDonationInBackground(
+  donationId: string,
+  amountBrl: string
+) {
+  try {
+    // Tentar enfileirar se Redis disponível
+    await enqueueJob('processDonation', { donationId, amountBrl });
+  } catch {
+    // Fallback: processar diretamente
+    processDonation({ donationId, amountBrl }).catch((error) => {
+      console.error('Erro ao processar doação:', error);
+    });
+  }
+}
+
+/**
  * Processa evento de PIX recebido
  */
 async function handlePixReceived(
@@ -171,11 +190,9 @@ async function handlePixReceived(
       amountBrl,
     });
 
-    // Enfileirar processamento
-    await enqueueJob('processDonation', {
-      donationId: donation.id,
-      amountBrl,
-    });
+    // Processar imediatamente (sem cron no plano Hobby)
+    // Em background para não travar o webhook response
+    processDonationInBackground(donation.id, amountBrl);
 
     // Atualizar webhook como processado
     await prisma.webhookEvent.update({
