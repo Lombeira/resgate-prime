@@ -1,0 +1,207 @@
+// Prisma Schema para Resgate Prime
+// Sistema de doações PIX → USDT
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_DATABASE_URL")
+}
+
+// Registro de doações recebidas via PIX
+model Donation {
+  id            String   @id @default(cuid())
+  providerId    String?  @unique // ID da transação no provedor (idempotência)
+  amountBrl     Decimal  @db.Decimal(18, 2)
+  payerName     String?
+  payerDocument String?  // CPF/CNPJ do doador
+  pixKey        String?  // Chave PIX usada
+  status        DonationStatus @default(PENDING)
+  
+  // Relações
+  order         Order?
+  webhookEvents WebhookEvent[]
+  
+  receivedAt    DateTime
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  @@index([providerId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+enum DonationStatus {
+  PENDING       // PIX recebido, aguardando processamento
+  PROCESSING    // Ordem de conversão criada
+  PROCESSED     // Conversão completa e USDT enviado
+  FAILED        // Falha no processo
+  REFUNDED      // Devolvido ao doador
+}
+
+// Ordens de conversão BRL → USDT
+model Order {
+  id              String   @id @default(cuid())
+  donationId      String   @unique
+  donation        Donation @relation(fields: [donationId], references: [id], onDelete: Cascade)
+  
+  providerOrderId String?  @unique // ID da ordem no provedor
+  pair            String   @default("USDT-BRL")
+  side            String   @default("BUY") // BUY USDT com BRL
+  
+  amountBrl       Decimal  @db.Decimal(18, 2)
+  expectedUsdt    Decimal? @db.Decimal(18, 8)
+  filledUsdt      Decimal? @db.Decimal(18, 8)
+  executedPrice   Decimal? @db.Decimal(18, 8)
+  
+  status          OrderStatus @default(PLACED)
+  
+  // Relação com withdrawal
+  withdrawal      Withdrawal?
+  
+  placedAt        DateTime @default(now())
+  filledAt        DateTime?
+  updatedAt       DateTime @updatedAt
+  
+  // Retry tracking
+  retryCount      Int      @default(0)
+  lastError       String?
+  
+  @@index([providerOrderId])
+  @@index([status])
+  @@index([donationId])
+}
+
+enum OrderStatus {
+  PLACED        // Ordem colocada no provedor
+  PARTIAL       // Parcialmente executada
+  FILLED        // Completamente executada
+  FAILED        // Falha na execução
+  CANCELLED     // Cancelada
+}
+
+// Retiradas de USDT para wallet própria
+model Withdrawal {
+  id                    String   @id @default(cuid())
+  orderId               String   @unique
+  order                 Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  
+  providerWithdrawalId  String?  @unique
+  
+  asset                 String   @default("USDT")
+  network               String   // TRC20, ERC20, POLYGON
+  amount                Decimal  @db.Decimal(18, 8)
+  address               String   // Endereço da wallet destino
+  
+  status                WithdrawalStatus @default(PENDING)
+  
+  txHash                String?  // Hash da transação on-chain
+  fee                   Decimal? @db.Decimal(18, 8)
+  
+  createdAt             DateTime @default(now())
+  sentAt                DateTime?
+  confirmedAt           DateTime?
+  updatedAt             DateTime @updatedAt
+  
+  // Retry tracking
+  retryCount            Int      @default(0)
+  lastError             String?
+  
+  @@index([providerWithdrawalId])
+  @@index([status])
+  @@index([txHash])
+}
+
+enum WithdrawalStatus {
+  PENDING       // Aguardando envio
+  PROCESSING    // Sendo processado pelo provedor
+  SENT          // Enviado para blockchain
+  CONFIRMED     // Confirmado on-chain
+  FAILED        // Falha no envio
+}
+
+// Log de webhooks recebidos (auditoria e idempotência)
+model WebhookEvent {
+  id            String   @id @default(cuid())
+  donationId    String?
+  donation      Donation? @relation(fields: [donationId], references: [id], onDelete: SetNull)
+  
+  providerId    String?  @unique // ID único do evento no provedor
+  eventType     String   // pix.received, order.filled, withdrawal.confirmed
+  
+  rawPayload    Json     // Payload completo do webhook
+  signature     String?  // Assinatura para validação
+  
+  status        WebhookStatus @default(RECEIVED)
+  processedAt   DateTime?
+  error         String?
+  
+  receivedAt    DateTime @default(now())
+  createdAt     DateTime @default(now())
+  
+  @@index([providerId])
+  @@index([eventType])
+  @@index([status])
+}
+
+enum WebhookStatus {
+  RECEIVED      // Webhook recebido e validado
+  PROCESSING    // Sendo processado
+  PROCESSED     // Processado com sucesso
+  FAILED        // Falha no processamento
+}
+
+// Usuários admin do dashboard
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  name          String
+  role          UserRole @default(VIEWER)
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  auditLogs     AuditLog[]
+}
+
+enum UserRole {
+  ADMIN         // Acesso total
+  OPERATOR      // Pode executar ações manuais
+  VIEWER        // Apenas visualização
+}
+
+// Audit log para compliance
+model AuditLog {
+  id            String   @id @default(cuid())
+  userId        String?
+  user          User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  
+  action        String   // "manual_order", "manual_withdrawal", "refund"
+  resource      String   // "donation:123", "order:456"
+  details       Json?
+  
+  ipAddress     String?
+  userAgent     String?
+  
+  createdAt     DateTime @default(now())
+  
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+}
+
+// Configurações do sistema
+model SystemConfig {
+  id            String   @id @default(cuid())
+  key           String   @unique
+  value         String
+  description   String?
+  
+  updatedAt     DateTime @updatedAt
+  
+  @@index([key])
+}
+
