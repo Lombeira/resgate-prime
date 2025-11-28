@@ -52,7 +52,9 @@ export function DonationsList() {
   if (loading) {
     return (
       <div className='bg-white rounded-lg shadow p-6'>
-        <h2 className='text-xl font-bold mb-4'>Carregando...</h2>
+        <h2 className='text-xl font-bold mb-4 text-gray-900'>
+          Carregando...
+        </h2>
       </div>
     );
   }
@@ -60,9 +62,11 @@ export function DonationsList() {
   if (donations.length === 0) {
     return (
       <div className='bg-white rounded-lg shadow p-6 text-center'>
-        <AlertCircle className='w-12 h-12 text-gray-400 mx-auto mb-4' />
-        <h2 className='text-xl font-bold mb-2'>Nenhuma doação encontrada</h2>
-        <p className='text-gray-600'>
+        <AlertCircle className='w-12 h-12 text-gray-500 mx-auto mb-4' />
+        <h2 className='text-xl font-bold mb-2 text-gray-900'>
+          Nenhuma doação encontrada
+        </h2>
+        <p className='text-gray-700'>
           As doações aparecerão aqui assim que forem recebidas via PIX
         </p>
       </div>
@@ -72,7 +76,9 @@ export function DonationsList() {
   return (
     <div className='bg-white rounded-lg shadow overflow-hidden'>
       <div className='p-6 border-b border-gray-200'>
-        <h2 className='text-xl font-bold'>Doações Recentes</h2>
+        <h2 className='text-xl font-bold text-gray-900'>
+          Doações Recentes
+        </h2>
       </div>
 
       <div className='overflow-x-auto'>

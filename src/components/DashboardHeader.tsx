@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Home, RefreshCw } from 'lucide-react';
+import { Home, RefreshCw, Heart } from 'lucide-react';
 
 export function DashboardHeader() {
   return (
@@ -9,16 +9,22 @@ export function DashboardHeader() {
       <div className='container mx-auto px-4 py-4 flex justify-between items-center'>
         <Link
           href='/'
-          className='flex items-center gap-2 text-xl font-bold text-blue-600'
+          className='flex items-center gap-2 text-xl font-bold text-blue-600 hover:text-blue-700 transition'
         >
-          <Home className='w-6 h-6' />
+          <Heart className='w-6 h-6' />
           Resgate Prime
         </Link>
 
         <nav className='flex items-center gap-4'>
           <Link
-            href='/dashboard'
+            href='/'
             className='text-gray-600 hover:text-gray-900 transition'
+          >
+            Doar
+          </Link>
+          <Link
+            href='/dashboard'
+            className='text-blue-600 font-medium hover:text-blue-700 transition'
           >
             Dashboard
           </Link>
